@@ -12,6 +12,7 @@ class Post(models.Model):
     poster = models.ForeignKey("User", on_delete= models.CASCADE, related_name= "posts")
     likes = models.ManyToManyField("User", through = "Like",related_name= "liked")
     time = models.DateTimeField(auto_now_add=True)
+    title = models.CharField(max_length=255)
     content = models.TextField()
 
     def __str__(self):

@@ -1,0 +1,12 @@
+{% extends "network/layout.html" %}
+{%block body %}
+<div class = "m-2 p-2">
+    <h2>Person Info:</h1>
+    <p>
+        Followers: {{user.followers.count}}
+    </p>
+    <p>
+        Following: {{user.following.count}}
+    </p>
+</div>
+{% endblock %}

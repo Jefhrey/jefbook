@@ -1,5 +1,95 @@
 {% extends "network/layout.html" %}
 
 {% block body %}
-    TODO
+{% for post in posts %}
+<div class = "border my-2 mx-2 p-2">
+<h5>Title:</h5>
+{{post.title}}
+<h5>Content:</h5>
+{{post.content}}
+<p class = "text-body-secondary" id = "tiny" >Posted at: {{post.time}} by <a href="{% url 'profile' post.poster.id %}">{{post.poster}}</a></p> 
+<button class = "like-btn" data-post-id = "{{post.id}}" type = "button"><i class = "bi bi-heart-fill "  >{{post.likes.count}}</i></button>
+</div>
+{% endfor %}
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  // Function to get CSRF token
+  function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+          const cookies = document.cookie.split(';');
+          for (let cookie of cookies) {
+              cookie = cookie.trim();
+              if (cookie.startsWith(name + '=')) {
+                  cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                  break;
+              }
+          }
+      }
+      return cookieValue;
+  }
+
+  const csrf = getCookie('csrftoken');
+
+  async function update_like(event) {
+    
+    const myBtn = event.currentTarget;
+    myBtn.disabled = true;
+    const postId = myBtn.dataset.postId;
+    const heartIcon = myBtn.querySelector('.bi-heart-fill'); // **important fix**
+
+    try {
+      const res = await fetch(`/like/${postId}`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrf,
+          'Accept': 'application/json'
+        },
+        credentials: 'same-origin'
+      });
+
+      if (res.status === 204) {
+        return {"liked": null};
+      }
+
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          throw new Error("Please login");
+        } else {
+          const txt = await res.text();
+          throw new Error(`Error code: ${res.status}. Message: ${txt.slice(0,200)}`);
+        }
+      }
+
+      const contentType = res.headers.get("content-type") || "";
+      if (contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.like_count == null) {
+          alert("Something went wrong. Please try again :c");
+        } else {
+          heartIcon.textContent = data.like_count; // update **only this button**
+        }
+      } else {
+        const text = await res.text();
+        throw new Error('Expected JSON but got: ' + text.slice(0, 200));
+      }
+    } catch (error) {
+      console.error(error);
+      alert(error.message || 'Something went wrong');
+    }finally{
+      myBtn.disabled = false;
+    }
+  }
+
+  // Attach event listeners
+  document.querySelectorAll(".like-btn").forEach(btn => {
+    btn.addEventListener('click', update_like);
+  });
+
+});
+</script>
 {% endblock %}

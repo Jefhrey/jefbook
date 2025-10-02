@@ -1,0 +1,13 @@
+{% extends "network/layout.html" %}
+{%block body %}
+<div class = "d-flex justify-content-center">
+    <form action="{% url 'create' %}" method = "POST">
+        {% csrf_token %}
+        <h5>Title:</h5>
+        {{post.title}}
+        <h5>Content:</h5>
+        {{post.content}}
+        <button type = "submit" class="d-block btn btn-primary">Create</button>
+    </form>
+</div>
+{% endblock %}

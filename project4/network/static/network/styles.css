@@ -1,0 +1,8 @@
+#tiny
+{
+    font-size: 10px; !important;
+}
+
+.like-btn:hover{
+    color: red;
+}
