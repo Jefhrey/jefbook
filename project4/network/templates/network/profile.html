@@ -1,12 +1,178 @@
 {% extends "network/layout.html" %}
 {%block body %}
 <div class = "m-2 p-2">
-    <h2>Person Info:</h1>
+    <h2>{{prof.username}}'s Info:</h2>
     <p>
-        Followers: {{user.followers.count}}
+        Followers: {{prof.followers.count}}
     </p>
     <p>
-        Following: {{user.following.count}}
+        Following: {{prof.following.count}}
     </p>
+
+    <button class = "follow" data-follow-id = "{{prof.id}}">
+        {% if is_follow %}
+        Unfollow
+        {% else %}
+        Follow
+        {% endif %}
+    </button>
+    <div class = "m-2 p-2 bg-light">
+    <h2>{{prof.username}}'s Posts:</h2>
+    {% for post in posts %}
+        <div class = "border my-2 mx-2 p-2">
+        <h5>Title:</h5>
+        {{post.title}}
+        <h5>Content:</h5>
+        {{post.content}}
+        <p class = "text-body-secondary" id = "tiny" >Posted at: {{post.time}} by <a href="{% url 'profile' post.poster.id %}">{{post.poster}}</a></p> 
+        <button class = "like-btn" data-post-id = "{{post.id}}" type = "button"><i class = "bi bi-heart-fill "  >{{post.likes.count}}</i></button>
+        </div>
+    {% endfor %}
+    </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  // Function to get CSRF token
+  function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+          const cookies = document.cookie.split(';');
+          for (let cookie of cookies) {
+              cookie = cookie.trim();
+              if (cookie.startsWith(name + '=')) {
+                  cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                  break;
+              }
+          }
+      }
+      return cookieValue;
+  }
+
+  const csrf = getCookie('csrftoken');
+
+  async function update_like(event) {
+    
+    const myBtn = event.currentTarget;
+    myBtn.disabled = true;
+    const postId = myBtn.dataset.postId;
+    const heartIcon = myBtn.querySelector('.bi-heart-fill'); 
+
+    try {
+      const res = await fetch(`/like/${postId}`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrf,
+          'Accept': 'application/json'
+        },
+        credentials: 'same-origin'
+      });
+
+      if (res.status === 204) {
+        return {"liked": null};
+      }
+
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          throw new Error("Please login");
+        } else {
+          const txt = await res.text();
+          throw new Error(`Error code: ${res.status}. Message: ${txt.slice(0,200)}`);
+        }
+      }
+
+      const contentType = res.headers.get("content-type") || "";
+      if (contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.like_count == null) {
+          alert("Something went wrong. Please try again :c");
+        } else {
+          heartIcon.textContent = data.like_count; // update **only this button**
+        }
+      } else {
+        const text = await res.text();
+        throw new Error('Expected JSON but got: ' + text.slice(0, 200));
+      }
+    } catch (error) {
+      console.error(error);
+      alert(error.message || 'Something went wrong');
+    }finally{
+      myBtn.disabled = false;
+    }
+  }
+
+  async function follow_user(event)
+  {
+    const myBtn = event.currentTarget;
+    const csrf = getCookie('csrftoken');
+    const followId = myBtn.dataset.followId;
+    try{
+    const res = await fetch(`/follow/${followId}`, {
+        'method': "POST",
+        'headers': {
+            'X-CSRFToken':  csrf,
+            'Accept': "application/json",
+        },
+        'credentials': "same-origin"
+    });
+
+    if(res.status == 204)
+    {
+        throw new Error("Something went wrong. Try again:/");
+    }
+
+    if(!res.ok)
+    {
+        if(res.status == 400){
+            alert("You cannot follow yourself!");
+            throw new Error("can't follow yourself");
+        }
+        else if(res.status == 401)
+        {
+            alert("You need to log in first~");
+            throw new Error("Error: Please login");
+        }
+        else
+        {
+            const txt = await res.text();
+            throw new Error(`Error Code: ${res.status}. Error: ${txt.slice(0, 200)}`);
+        }
+    }
+
+    const ct = (res.headers.get('content-type') || "");
+    if(ct.includes('application/json'))
+    {
+        // Follow and stuff
+        const response = await res.json();
+        if(response.action == "unfollow"){
+            myBtn.textContent = "Follow";
+            const f = document.querySelector('p');
+            f.textContent = "Followers: " + response.follower_count;
+        }
+        else{
+            myBtn.textContent = "Unfollow";
+            const f = document.querySelector('p');
+            f.textContent = "Followers: " + response.follower_count;
+        }
+    }
+    else
+    {
+        const txt = await res.text();
+        throw new Error(`Expected JSON. Instead got this: ${txt.slice(0, 200)}`);
+    }
+
+  }catch(error){
+    alert("Fetch did not go through");
+  }
+  }
+  // Attach event listeners
+  document.querySelectorAll(".like-btn").forEach(btn => {
+    btn.addEventListener('click', update_like);
+  });
+
+  document.querySelector(".follow").addEventListener('click', follow_user);
+
+});
+</script>
 {% endblock %}

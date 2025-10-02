@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const myBtn = event.currentTarget;
     myBtn.disabled = true;
     const postId = myBtn.dataset.postId;
-    const heartIcon = myBtn.querySelector('.bi-heart-fill'); // **important fix**
+    const heartIcon = myBtn.querySelector('.bi-heart-fill'); 
 
     try {
       const res = await fetch(`/like/${postId}`, {

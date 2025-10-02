@@ -109,8 +109,17 @@ def create(request):
     })
 
 def profile(request, id):
+    prof = get_object_or_404(User, pk=id)
+    user_posts = Post.objects.filter(poster = request.user)
+    print("HIII")
+    print(user_posts)
+    print(prof)
+    is_following = prof.followers.filter(pk=request.user.pk).exists() if request.user.is_authenticated else False
     return render(request, "network/profile.html", {
-        "id" : id
+        "id" : id,
+        "posts": user_posts,
+        "prof": prof,
+        "is_follow": is_following
     })
 
 @require_POST
@@ -129,3 +138,24 @@ def update_like(request, post_id):
     return JsonResponse({
         "like_count": current_post.likes.count()
     })
+
+@require_POST
+def update_follow(request, user_id):
+    # user_id is the id of the person to follow. current_id will be the online iuser
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Login required'}, status = 401)
+    
+    online = request.user
+    p = get_object_or_404(User, pk = user_id)
+    if online == p:
+        return JsonResponse({'error': "Cannot follow self"}, status = 400)
+    #  Check if following already
+    if(p.followers.filter(pk = online.id).exists()):
+        # unfollow
+        p.followers.remove(online)
+        action = "unfollow"
+    else:
+        p.followers.add(online)
+        action = "follow"
+    
+    return JsonResponse({'follower_count': p.followers.count(), 'action': action})
