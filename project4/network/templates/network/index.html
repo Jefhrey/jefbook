@@ -8,10 +8,22 @@
 <h5>Content:</h5>
 {{post.content}}
 <p class = "text-body-secondary" id = "tiny" >Posted at: {{post.time}} by <a href="{% url 'profile' post.poster.id %}">{{post.poster}}</a></p> 
-<button class = "like-btn" data-post-id = "{{post.id}}" type = "button"><i class = "bi bi-heart-fill "  >{{post.likes.count}}</i></button>
+<button class = "like-btn btn" data-post-id = "{{post.id}}" type = "button"><i class = "bi bi-heart-fill "  >{{post.likes.count}}</i></button>
+<a class = "btn btn-primary" href = "{% url 'edit' post.id %}">Edit</a>
 </div>
-{% endfor %}
 
+{% endfor %}
+<div class = "pagi">
+  {% if posts.has_previous %}
+  <a href = "?page=1">First</a>
+    <a href = "?page={{posts.previous_page_number}}">Previous</a>
+  {% endif %}
+Page {{posts.number}} of {{posts.paginator.num_pages}}
+  {% if posts.has_next %}
+  <a href = "?page={{venues.next_page_number}}">Last</a>
+    <a href = "?page={{posts.next_page_number}}">Next</a>
+  {% endif %}
+</div>
 
 
 <script>

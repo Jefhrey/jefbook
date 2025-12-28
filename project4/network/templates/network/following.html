@@ -1,0 +1,15 @@
+{%extends "network/layout.html" %}
+
+{% block body %}
+
+{% for post in posts %}
+    <div class = "border my-2 mx-2 p-2">
+    <h5>Title:</h5>
+    {{post.title}}
+    <h5>Content:</h5>
+    {{post.content}}
+    <p class = "text-body-secondary" id = "tiny" >Posted at: {{post.time}} by <a href="{% url 'profile' post.poster.id %}">{{post.poster}}</a></p> 
+    <button class = "like-btn" data-post-id = "{{post.id}}" type = "button"><i class = "bi bi-heart-fill "  >{{post.likes.count}}</i></button>
+    </div>
+{% endfor %}
+{% endblock %}

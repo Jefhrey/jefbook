@@ -6,6 +6,7 @@ from django.urls import reverse
 from django import forms
 from .models import Post, User, Comment, Like
 from django.views.decorators.http import require_POST
+from django.core.paginator import Paginator
 
 
 class NewPost(forms.Form):
@@ -30,9 +31,14 @@ from .models import User
 
 
 def index(request):
-    posts = Post.objects.all()
-    print("HELLLLOOOOOO")
-    print(posts)
+    # posts = Post.objects.all()
+    # print("HELLLLOOOOOO")
+    # print(posts)
+    p = Paginator(Post.objects.all(), 2)
+    curr_page = request.GET.get("page")
+    posts = p.get_page(curr_page)
+
+
     return render(request, "network/index.html", {
         "posts": posts
     })
@@ -110,13 +116,13 @@ def create(request):
 
 def profile(request, id):
     prof = get_object_or_404(User, pk=id)
-    user_posts = Post.objects.filter(poster = request.user)
+    user_posts = Post.objects.filter(poster = prof)
     print("HIII")
     print(user_posts)
     print(prof)
     is_following = prof.followers.filter(pk=request.user.pk).exists() if request.user.is_authenticated else False
     return render(request, "network/profile.html", {
-        "id" : id,
+        "id" : id, 
         "posts": user_posts,
         "prof": prof,
         "is_follow": is_following
@@ -159,3 +165,38 @@ def update_follow(request, user_id):
         action = "follow"
     
     return JsonResponse({'follower_count': p.followers.count(), 'action': action})
+
+
+def following(request):
+    # Obtain a list of followed User
+    # Display their posts
+    # following = User.objects.filter(following = request.user)
+    persons = request.user.following.all()
+    print("THIS IS PERSON")
+    print(persons)
+    posts = Post.objects.filter(poster__in=persons)
+
+    return render(request, "network/following.html",{
+        "posts": posts
+    })
+
+def edit(request, id):
+    curr_post = get_object_or_404(Post, pk = id)
+    if(request.method == "POST"):
+        form = NewPost(request.POST)
+        if form.is_valid():
+            response = form.cleaned_data
+            curr_post.title = response["title"]
+            curr_post.content = response["content"] 
+            curr_post.save()
+        return redirect("index")
+    
+    print(curr_post)
+    return render(request, "network/edit.html", {
+        "id": id,
+        "curr_post": curr_post,
+        "post": NewPost(initial = {
+            "title": curr_post.title,
+            "content": curr_post.content
+        })
+    })
